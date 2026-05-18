@@ -1,6 +1,6 @@
 const express = require('express')
 const dotenv = require('dotenv')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors =require('cors')
 dotenv.config()
 const app = express()
@@ -39,8 +39,16 @@ async function run() {
       res.send(result)
     })
     app.get('/appoinments/:appoinmentId', async(req, res)=>{
-      const {apponmentId}= req.params;
+      const {appoinmentId}= req.params;
 
+      const result= await appoinmentsCollection.findOne({_id: new ObjectId(appoinmentId)})
+      res.send(result)
+
+    })
+
+    app.get('/featured',async(req,res)=>{
+      const result= await appoinmentsCollection.find().limit(3).toArray()
+      res.send(result)
     })
    
     await client.db("admin").command({ ping: 1 });
