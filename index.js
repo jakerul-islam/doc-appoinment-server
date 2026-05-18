@@ -14,7 +14,7 @@ const port =process.env.PORT || 5000;
 
 
 
-const uri = `mongodb://docAppoinment:34jRupOFX732HFTu@ac-l1otbgb-shard-00-00.bron4kg.mongodb.net:27017,ac-l1otbgb-shard-00-01.bron4kg.mongodb.net:27017,ac-l1otbgb-shard-00-02.bron4kg.mongodb.net:27017/?ssl=true&replicaSet=atlas-npqpq7-shard-0&authSource=admin&appName=Cluster0`
+const uri =process.env.MONGODB_URI;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -37,6 +37,10 @@ async function run() {
       const result = await appoinmentsCollection.find().toArray()
 
       res.send(result)
+    })
+    app.get('/appoinments/:appoinmentId', async(req, res)=>{
+      const {apponmentId}= req.params;
+
     })
    
     await client.db("admin").command({ ping: 1 });
