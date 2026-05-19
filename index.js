@@ -32,6 +32,7 @@ async function run() {
 
     const db = client.db('appoinmentsdb')
     const appoinmentsCollection = db.collection('appoinments')
+    const bookingCollection = db.collection('bookings')
 
     app.get('/appoinments',async(req,res)=>{
       const result = await appoinmentsCollection.find().toArray()
@@ -48,6 +49,12 @@ async function run() {
 
     app.get('/featured',async(req,res)=>{
       const result= await appoinmentsCollection.find().limit(3).toArray()
+      res.send(result)
+    })
+
+    app.post('/booking',async(req,res)=>{
+      const bookingData= req.body;
+      const result= await bookingCollection.insertOne(bookingData)
       res.send(result)
     })
    
