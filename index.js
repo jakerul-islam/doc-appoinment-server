@@ -51,11 +51,22 @@ async function run() {
       const result= await appoinmentsCollection.find().limit(3).toArray()
       res.send(result)
     })
-
+                    // booking section
     app.post('/booking',async(req,res)=>{
       const bookingData= req.body;
       const result= await bookingCollection.insertOne(bookingData)
       res.send(result)
+    })
+
+    app.get('/booking/:userId',async(req,res)=>{
+      const {userId}= req.params;
+      const result= await bookingCollection.find({userId:userId}).toArray()
+      res.send(result)
+    })
+
+    app.delete('/booking/:bookingId', async(req,res)=>{
+      const {bookingId}=req.params;
+      const result=await bookingCollection.deleteOne({_id:new ObjectId(bookingId)})
     })
    
     await client.db("admin").command({ ping: 1 });
