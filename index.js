@@ -160,7 +160,7 @@ console.log(payload ,'from payload')
 async function run() {
   try {
     
-    await client.connect();
+    // await client.connect();
 
     const db = client.db('appoinmentsdb');
     const appoinmentsCollection = db.collection('appoinments');
