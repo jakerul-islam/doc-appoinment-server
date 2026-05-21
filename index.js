@@ -96,6 +96,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
+const { createRemoteJWKSet, jwtVerify } = require('jose-cjs');
 dotenv.config();
 
 const app = express();
@@ -105,16 +106,56 @@ app.use(express.json());
 const port = process.env.PORT || 5000;
 const uri = process.env.MONGODB_URI;
 
-// 🎯 ফিক্স ১: কানেকশন লিক এবং লিমিট ওভারফ্লো বন্ধ করতে Connection Pool সেট করা হয়েছে
+
+
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
   },
-  maxPoolSize: 10,             // একসঙ্গে ১০টির বেশি কানেকশন ওপেন হতে দেবে না
-  serverSelectionTimeoutMS: 5000, // ৫ সেকেন্ডের মধ্যে কানেক্ট না হলে এরর দেখাবে
+  maxPoolSize: 10,             
+  serverSelectionTimeoutMS: 5000, 
 });
+
+
+
+const JWKS = createRemoteJWKSet(
+  new URL('http://localhost:3000/api/auth/jwks')
+);
+
+console.log('http://localhost:3000/api/auth/jwks')
+
+const verifyToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      return res.status(401).json({ message: "No auth header" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ message: "No token" });
+    }
+
+    const { payload } = await jwtVerify(token, JWKS, {
+      clockTolerance: 5
+
+      
+    });
+console.log(payload ,'from payload')
+   
+
+    req.user = payload;
+    next();
+  } catch (error) {
+    console.error("JWT ERROR:", error);
+    return res.status(403).json({ message: "Forbidden" });
+  }
+};
 
 async function run() {
   try {
@@ -125,13 +166,32 @@ async function run() {
     const appoinmentsCollection = db.collection('appoinments');
     const bookingCollection = db.collection('bookings');
 
-    // Appointments Routes
-    app.get('/appoinments', async (req, res) => {
-      const result = await appoinmentsCollection.find().toArray();
-      res.send(result);
-    });
+   
+app.get('/appoinments', async (req, res) => {
+  try {
+    const search = req.query.search || ""; 
+    
+    let query = {};
+    
+   
+    if (search) {
+      query = {
+        $or: [
+          { name: { $regex: search, $options: 'i' } },      
+          { specialty: { $regex: search, $options: 'i' } } 
+        ]
+      };
+    }
 
-    app.get('/appoinments/:appoinmentId', async (req, res) => {
+    const result = await appoinmentsCollection.find(query).toArray();
+    res.send(result);
+  } catch (error) {
+    console.error("Search API Error:", error);
+    res.status(500).send({ message: "Internal Server Error" });
+  }
+});
+
+    app.get('/appoinments/:appoinmentId',verifyToken, async (req, res) => {
       const { appoinmentId } = req.params;
       const result = await appoinmentsCollection.findOne({ _id: new ObjectId(appoinmentId) });
       res.send(result);
@@ -149,7 +209,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/booking/:userId', async (req, res) => {
+    app.get('/booking/:userId',verifyToken, async (req, res) => {
       const { userId } = req.params;
       const result = await bookingCollection.find({ userId: userId }).toArray();
       res.send(result);
@@ -159,7 +219,7 @@ async function run() {
     app.delete('/booking/:bookingId', async (req, res) => {
       const { bookingId } = req.params;
       const result = await bookingCollection.deleteOne({ _id: new ObjectId(bookingId) });
-      res.send(result); // ফ্রন্টএন্ডে রেজাল্ট পাঠানো হলো, এখন "Deleting..." এ আটকে থাকবে না!
+      res.send(result); 
     });
 
     app.patch('/booking/:id', async (req, res) => {
