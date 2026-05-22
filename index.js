@@ -124,7 +124,7 @@ async function run() {
     });
 
     // Booking Section
-    app.post('/booking', async (req, res) => {
+    app.post('/booking', verifyToken, async (req, res) => {
       const bookingData = req.body;
       const bookingCollection = req.db.collection('bookings');
       const result = await bookingCollection.insertOne(bookingData);
@@ -138,14 +138,14 @@ async function run() {
       res.send(result);
     });
 
-    app.delete('/booking/:bookingId', async (req, res) => {
+    app.delete('/booking/:bookingId',verifyToken, async (req, res) => {
       const { bookingId } = req.params;
       const bookingCollection = req.db.collection('bookings');
       const result = await bookingCollection.deleteOne({ _id: new ObjectId(bookingId) });
       res.send(result); 
     });
 
-    app.patch('/booking/:id', async (req, res) => {
+    app.patch('/booking/:id',verifyToken, async (req, res) => {
       const { id } = req.params;
       const updateData = req.body;
       const bookingCollection = req.db.collection('bookings');
